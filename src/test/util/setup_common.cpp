@@ -379,7 +379,7 @@ TestChain100Setup::TestChain100Setup(
     TestOpts opts)
     : TestingSetup{ChainType::REGTEST, opts}
 {
-    SetMockTime(1598887952);
+    SetMockTime(1792022400); // Cadcoin: regtest genesis time (1791936000) + 1 day
     constexpr std::array<unsigned char, 32> vchKey = {
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}};
     coinbaseKey.Set(vchKey.begin(), vchKey.end(), true);
@@ -389,9 +389,9 @@ TestChain100Setup::TestChain100Setup(
 
     {
         LOCK(::cs_main);
-        assert(
-            m_node.chainman->ActiveChain().Tip()->GetBlockHash().ToString() ==
-            "0c8c5f79505775a0f6aed6aca2350718ceb9c6f2c878667864d5c7a6d8ffa2a6");
+        const std::string tip_hash{m_node.chainman->ActiveChain().Tip()->GetBlockHash().ToString()};
+        if (tip_hash != "2857eb3089063a522ef753ccf51ed2014815820f8c3e7394f4bd1a9d0bee8ce9") fprintf(stderr, "TestChain100Setup tip: %s\n", tip_hash.c_str());
+        assert(tip_hash == "2857eb3089063a522ef753ccf51ed2014815820f8c3e7394f4bd1a9d0bee8ce9");
     }
 }
 
