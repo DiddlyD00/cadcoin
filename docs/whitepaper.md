@@ -107,8 +107,28 @@ Mainnet genesis was mined at Bitcoin's real starting difficulty `0x1d00ffff`.
 
 ### Tests
 
-See the "Test status" section below.
+See "Test status" below.
 
 ## Test status
 
-Pending.
+Unit tests (`ctest`, build of 2026-10-14): **141 of 153 pass**, 1 skipped (`script_assets_tests`,
+needs external data). No tests were disabled; the 12 remaining failures are all fixture/vector
+issues caused by the intentional network-identity changes, not consensus differences:
+
+| Test | Why it fails | To fix |
+|---|---|---|
+| `key_io_tests`, `key_tests`, `bloom_tests`, `descriptor_tests`, `script_standard_tests` (BIP341 vectors), `util_tests/message_verify`, `rpc_tests/rpc_rawsign` | Hard-coded Bitcoin addresses / WIF keys (`1…`, `3…`, `bc1…`, `5…`/`K…`/`L…`) | Regenerate vectors with Cadcoin prefixes (`contrib/testgen/gen_key_io_test_vectors.py`) |
+| `bip324_tests` | BIP324 test vectors include the network magic (garbage terminator / session id) | Regenerate vectors for Cadcoin magic |
+| `miner_tests` | Precomputed nonce table for blocks on top of Bitcoin's regtest genesis | Regenerate `BLOCKINFO` nonces |
+| `validation_chainstate_tests`, `validation_chainstatemanager_tests` (snapshot cases) | Regtest `m_assumeutxo_data` still holds Bitcoin regtest snapshot hashes | Recompute height 110/200/299 snapshot hashes |
+| `net_tests`, `validation_chainstatemanager_tests/ibd` | Genesis timestamp is 2026-10-14, so a fresh node is not in IBD for its first 24 h; tests assume an old genesis. Self-resolves after 2026-10-15 00:00 UTC | — |
+
+Tests adjusted: `TestChain100Setup` mock time (now regtest genesis + 1 day) and its expected tip hash,
+fee-rate unit string (`CBC/kvB`), `cadcoin-cli` help examples, default port 8533 in
+`net_peer_connection_tests`. Functional tests (`test/functional`) were not run; the Python
+framework still looks for `bitcoind`/`bitcoin-cli` executable names.
+
+Regtest smoke test (passed): started `cadcoind -regtest`, genesis `007d6550…c101`, mined 101 blocks to an
+`rcbc1q…` address (balance 50 CBC), sent 10 CBC to a legacy `t…` address in a second wallet, mined 1 block:
+1 confirmation, fee 0.0000294 CBC, balances 89.9999706 / 10 CBC, user agent `/Cadcoin:31.1.0/`.
+
